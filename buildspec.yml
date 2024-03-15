@@ -1,0 +1,27 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo "installing dependencies..."
+      - pip install -r requirements.txt -t lib
+
+  build:
+    commands:
+      - echo "zipping deployment package"
+      - cd lib
+      - zip -r9 ../deployment_package.zip .
+      - cd..
+      - zip -g deployment_package.zip doordash.py
+      # Nothing to build, as this is for a Lambda function
+      
+  post_build:
+    commands:
+      - echo "uploading to s3"
+      - aws s3 cp deployment_package.zip s3://lambda-buildzip/
+      - echo "updating lambda function via s3"
+      - aws lambda update-function-code --function github_to_lambda_CICD --s3-bucket lambda-buildzip --s3-key deployment_package.zip
+      - echo "deployment complete"
+
